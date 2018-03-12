@@ -1,80 +1,164 @@
+#include <iostream>
 #include "matrix.hpp"
+using namespace std;
 
-matrix_t::matrix_t() : elements_{ nullptr }, rows_{ 0 }, collumns_{ 0 }
+int ** Create_Matrix(int stroki,int stolbi){
+    int **New_Matrix = new int *[stroki];
+    for (int i=0;i<stroki;i++){
+        New_Matrix[i]=new int [stolbi];
+    }
+    return New_Matrix;
+}
+matrix_t::matrix_t()
 {
+    stroki=0;
+    stolbi=0;
+    data = Create_Matrix(stroki, stolbi);
+}
+matrix_t::matrix_t(int in_stroki,int in_stolbi){
+    stroki=in_stroki;
+    stolbi=in_stolbi;
+    data = Create_Matrix(stroki, stolbi);
 }
 
-matrix_t::matrix_t( matrix_t const & other )
+matrix_t::matrix_t( matrix_t const & object )
 {
+    stroki=object.stroki;
+    stolbi=object.stolbi;
+    data=Create_Matrix(stroki, stolbi);
+    for ( int i = 0; i < stroki; ++i){
+        for ( int j = 0; j < stolbi; ++j){
+            data[i][j] = object.data[i][j];
+        }
+    }
 }
 
 matrix_t & matrix_t::operator =( matrix_t const & other )
 {
-	return *this;
+    if (&other == this) return *this;
+    for (int i=0; i<stroki; i++){ //Сначала освобождаем память ,потом узнаем размер ,потом выделяем память.
+        delete[] data[i];
+    }
+    delete[] data;
+    stroki=other.stroki;
+    stolbi=other.stolbi;
+    this->data = Create_Matrix(stroki, stolbi);
+    for ( int i = 0; i < stroki; ++i){
+        for ( int j = 0; j < stolbi; ++j){
+            data [i][j] = other.data[i][j];
+        }
+    }
+    //        cout<<"operator ="<<'\n';
+    return *this;
 }
 
 matrix_t::~matrix_t()
 {
+    for (int i=0; i<stroki; i++){
+        delete[] data[i];
+    }
+    delete[] data;
+    cout<<'\n';
+    
 }
 
-std::size_t matrix_t::rows() const
+unsigned int matrix_t::Get_Stroki() const
 {
-    return rows_;
+    return stroki;
 }
 
-std::size_t matrix_t::collumns() const
+    unsigned int matrix_t::Get_Stolbi() const
 {
-    return collumns_;
+    return stolbi;
 }
 
 matrix_t matrix_t::operator +( matrix_t const & other ) const
 {
-	matrix_t result;
-
-	return result;
+    matrix_t result(stroki,stolbi);
+    for (int i = 0; i< stroki; i++) {
+        for (int j = 0 ; j< stolbi; j++) {
+            result.data[i][j]=data[i][j]+other.data [i][j];
+        }
+    }
+    return result;
 }
 
 matrix_t matrix_t::operator -( matrix_t const & other ) const
 {
-	matrix_t result;
-
-	return result;
+    matrix_t result(stroki,stolbi);
+    for (int i = 0; i< stroki; i++) {
+        for (int j = 0 ; j< stolbi; j++) {
+            result.data[i][j]=data[i][j]-other.data [i][j];
+        }
+    }
+    return result;
 }
 
 matrix_t matrix_t::operator *( matrix_t const & other ) const
 {
-	matrix_t result;
-
-	return result;
+    matrix_t result(stroki,other.stolbi);
+    for (int i = 0; i<stroki; i++) {
+        for (int j = 0; j<other.stolbi; j++) {
+            result.data[i][j] = 0;
+            for (int h = 0; h<stolbi; h++) {
+                result.data[i][j] += data[i][h]*other.data[h][j];
+            }
+        }
+    }
+    return result;
 }
 
 matrix_t & matrix_t::operator -=( matrix_t const & other )
 {
-	return *this;
+    stroki=other.stroki;
+    stolbi=other.stolbi;
+    for (int i = 0; i< stroki; i++) {
+        for (int j = 0 ; j< stolbi; j++) {
+            data[i][j]=data[i][j]-other.data [i][j];
+        }
+    }
+    return *this;
 }
 
 matrix_t & matrix_t::operator +=( matrix_t const & other )
 {
-	return *this;
+    stroki=other.stroki;
+    stolbi=other.stolbi;
+    for (int i = 0; i< stroki; i++) {
+        for (int j = 0 ; j< stolbi; j++) {
+            data[i][j]=data[i][j]+other.data [i][j];
+        }
+    }
+    return *this;
 }
 
 matrix_t & matrix_t::operator *=( matrix_t const & other )
 {
-	return *this;
+    matrix_t copy(*this);
+    matrix_t copy2(other);
+    for (int i = 0; i<stroki; i++) {
+        for (int j = 0; j<other.stolbi; j++) {
+            data[i][j] = 0;
+            for (int h = 0; h<stolbi; h++) {
+                data[i][j] += copy.data[i][h]*copy2.data[h][j];
+            }
+        }
+    }
+    this->stolbi = other.stolbi;
+    return *this;
 }
-
-std::istream & matrix_t::read( std::istream & stream )
+istream & matrix_t::read( istream & stream )
 {
-    std::size_t rows;
-    std::size_t collumns;
-    char symbol;
+    unsigned int stroki2 ;
+    unsigned int stolbi2 ;
+    char symbol ;
     
     bool success = true;
-    if( stream >> rows && stream >> symbol && symbol == ',' && stream >> collumns ) {
-        float ** elements = new float *[ rows ];
-        for( std::size_t i = 0; success && i < rows; ++i ) {
-            elements[ i ] = new float[ collumns ];
-            for( std::size_t j = 0; j < collumns; ++j ) {
+    if( stream >> stroki2 && stream >> symbol && symbol == ',' && stream >> stolbi2 ) {
+        int ** elements = new int *[ stroki2 ];
+        for( unsigned int i = 0; success && i < stroki2; ++i ) {
+            elements[ i ] = new int [ stolbi2 ];
+            for( unsigned int j = 0; j < stolbi2; ++j ) {
                 if( !( stream >> elements[ i ][ j ] ) ) {
                     success = false;
                     break;
@@ -83,17 +167,17 @@ std::istream & matrix_t::read( std::istream & stream )
         }
         
         if( success ) {
-            for( std::size_t i = 0; i < rows_; ++i ) {
-                delete [] elements_[ i ];
+            for( unsigned int i = 0; i < stroki; ++i ) {
+                delete [] data[ i ];
             }
-            delete [] elements_;
+            delete [] data;
             
-            rows_ = rows;
-            collumns_ = collumns;
-            elements_ = elements;
+            stroki = stroki2;
+            stolbi = stolbi2;
+            data = elements;
         }
         else {
-            for( std::size_t i = 0; i < rows; ++i ) {
+            for( unsigned int i = 0; i < stroki2 ; ++i ) {
                 delete [] elements[ i ];
             }
             delete [] elements;
@@ -104,24 +188,28 @@ std::istream & matrix_t::read( std::istream & stream )
     }
     
     if( !success ) {
-        stream.setstate( std::ios_base::failbit );
+        stream.setstate( ios_base::failbit );
+        //            cout<<"ERROR"<<'\n';
     }
-    
-	return stream;
+    return stream;
 }
 
-std::ostream & matrix_t::write( std::ostream & stream ) const
+ostream & matrix_t::write( ostream & stream ) const
 {
-    stream << rows_ << ", " << collumns_;
-    for( std::size_t i = 0; i < rows_; ++i ) {
-        stream << '\n';
-        for( std::size_t j = 0; j < collumns_; ++j ) {
-            stream << elements_[ i ][ j ];
-            if( j != rows_ - 1 ) {
-                stream << ' ';
+    
+    stream << stroki << "," << stolbi;
+    for( unsigned int i = 0; i < stroki; ++i ) {
+        stream <<'\n';
+        for( unsigned int j = 0; j < stolbi; ++j ) {
+            stream << data[ i ][ j ];
+            if( j != stroki - 1 ) {
+                stream <<' ';
             }
         }
     }
     
-	return stream;
+    return stream;
 }
+
+
+
