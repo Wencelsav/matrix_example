@@ -36,7 +36,7 @@ matrix_t::matrix_t( matrix_t const & object )
 matrix_t & matrix_t::operator =( matrix_t const & other )
 {
     if (&other == this) return *this;
-    for (int i=0; i<stroki; i++){ //Сначала освобождаем память ,потом узнаем размер ,потом выделяем память.
+    for (int i=0; i<stroki; i++){
         delete[] data[i];
     }
     delete[] data;
@@ -48,7 +48,6 @@ matrix_t & matrix_t::operator =( matrix_t const & other )
             data [i][j] = other.data[i][j];
         }
     }
-    //        cout<<"operator ="<<'\n';
     return *this;
 }
 
@@ -189,7 +188,6 @@ istream & matrix_t::read( istream & stream )
     
     if( !success ) {
         stream.setstate( ios_base::failbit );
-        //            cout<<"ERROR"<<'\n';
     }
     return stream;
 }
