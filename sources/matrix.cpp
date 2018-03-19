@@ -1,163 +1,198 @@
 #include <iostream>
-#include "matrix.hpp"
-using namespace std;
+#include <cassert>
 
-int ** Create_Matrix(int stroki,int stolbi){
-    int **New_Matrix = new int *[stroki];
-    for (int i=0;i<stroki;i++){
-        New_Matrix[i]=new int [stolbi];
-    }
-    return New_Matrix;
-}
-matrix_t::matrix_t()
-{
-    stroki=0;
-    stolbi=0;
-    data = Create_Matrix(stroki, stolbi);
-}
-matrix_t::matrix_t(int in_stroki,int in_stolbi){
-    stroki=in_stroki;
-    stolbi=in_stolbi;
-    data = Create_Matrix(stroki, stolbi);
-}
-
-matrix_t::matrix_t( matrix_t const & object )
-{
-    stroki=object.stroki;
-    stolbi=object.stolbi;
-    data=Create_Matrix(stroki, stolbi);
-    for ( int i = 0; i < stroki; ++i){
-        for ( int j = 0; j < stolbi; ++j){
-            data[i][j] = object.data[i][j];
-        }
-    }
-}
-
-matrix_t & matrix_t::operator =( matrix_t const & other )
-{
-    if (&other == this) return *this;
-    for (int i=0; i<stroki; i++){
-        delete[] data[i];
-    }
-    delete[] data;
-    stroki=other.stroki;
-    stolbi=other.stolbi;
-    this->data = Create_Matrix(stroki, stolbi);
-    for ( int i = 0; i < stroki; ++i){
-        for ( int j = 0; j < stolbi; ++j){
-            data [i][j] = other.data[i][j];
-        }
-    }
-    return *this;
-}
-
-matrix_t::~matrix_t()
-{
-    for (int i=0; i<stroki; i++){
-        delete[] data[i];
-    }
-    delete[] data;
-    cout<<'\n';
+template<typename T>
+class matrix_t {
+private:
+    T ** elements_;
+    std::size_t rows_;
+    std::size_t collumns_;
+public:
+    matrix_t();
+    matrix_t( matrix_t const & other );
+    matrix_t & operator =( matrix_t const & other );
+    ~matrix_t();
     
+    std::size_t rows() const;
+    std::size_t collumns() const;
+    
+    matrix_t operator +( matrix_t const & other ) const;
+    matrix_t operator -( matrix_t const & other ) const;
+    matrix_t operator *( matrix_t const & other ) const;
+    
+    matrix_t & operator -=( matrix_t const & other );
+    matrix_t & operator +=( matrix_t const & other );
+    matrix_t & operator *=( matrix_t const & other );
+    
+    std::istream & read( std::istream & stream );
+    std::ostream & write( std::ostream  & stream ) const;
+};
+
+template<typename T>
+matrix_t<T>::matrix_t() : elements_{ nullptr }, rows_{ 0 }, collumns_{ 0 }
+{
 }
 
-unsigned int matrix_t::Get_Stroki() const
+template<typename T>
+matrix_t<T>::matrix_t( matrix_t const & other )
 {
-    return stroki;
+    elements_ = new T *[other.rows_];
+    for (std::size_t i = 0; i < other.rows_; i++)
+    {
+        elements_[i] = new T [other.collumns_];
+        for (std::size_t j = 0; j < other.collumns_; j++)
+        {
+            elements_[i][j] = other.elements_[i][j];
+        }
+        rows_ = other.rows_;
+        collumns_ = other.collumns_;
+    }
 }
 
-    unsigned int matrix_t::Get_Stolbi() const
+template<typename T>
+matrix_t<T> & matrix_t<T>::operator =( matrix_t const & other )
 {
-    return stolbi;
+    if (this == &other)
+    {
+        return *this;
+    }
+    elements_ = new T *[other.rows_];
+    for (std::size_t i = 0; i < other.rows_; i++)
+    {
+        elements_[i] = new T [other.collumns_];
+        for (std::size_t j = 0; j < other.collumns_; j++)
+        {
+            elements_[i][j] = other.elements_[i][j];
+        }
+        rows_ = other.rows_;
+        collumns_ = other.collumns_;
+    }
+    return *this;
 }
 
-matrix_t matrix_t::operator +( matrix_t const & other ) const
+template <typename T>
+matrix_t<T>::~matrix_t()
 {
-    matrix_t result(stroki,stolbi);
-    for (int i = 0; i< stroki; i++) {
-        for (int j = 0 ; j< stolbi; j++) {
-            result.data[i][j]=data[i][j]+other.data [i][j];
+    for( std::size_t i = 0; i < rows_; ++i )
+    {
+        delete [] elements_[ i ];
+    }
+    delete [] elements_;
+}
+
+template <typename T>
+std::size_t matrix_t<T>::rows() const
+{
+    return rows_;
+}
+
+template <typename T>
+std::size_t matrix_t<T>::collumns() const
+{
+    return collumns_;
+}
+
+template<typename T>
+matrix_t<T> matrix_t<T>::operator +( matrix_t const & other ) const
+{
+    assert(collumns_ == other.collumns() && rows_ == other.rows());
+    matrix_t result;
+    result.elements_ = new T * [rows_];
+    for (std::size_t i = 0; i < rows_; ++ i)
+    {
+        result.elements_ [i] = new T [collumns_];
+        for (std::size_t j = 0; j < collumns_; ++j)
+        {
+            result.elements_ [i][j] = elements_ [i][j] + other.elements_ [i][j];
         }
     }
+    result.rows_ = rows_;
+    result.collumns_ = collumns_;
     return result;
 }
 
-matrix_t matrix_t::operator -( matrix_t const & other ) const
+template<typename T>
+matrix_t<T> matrix_t<T>::operator -( matrix_t const & other ) const
 {
-    matrix_t result(stroki,stolbi);
-    for (int i = 0; i< stroki; i++) {
-        for (int j = 0 ; j< stolbi; j++) {
-            result.data[i][j]=data[i][j]-other.data [i][j];
+    assert(collumns_ == other.collumns() && rows_ == other.rows());
+    matrix_t result;
+    result.elements_ = new T * [rows_];
+    for (std::size_t i = 0; i < rows_; ++ i)
+    {
+        result.elements_ [i] = new T [collumns_];
+        for (std::size_t j = 0; j < collumns_; ++j)
+        {
+            result.elements_ [i][j] = elements_ [i][j] - other.elements_ [i][j];
         }
     }
+    result.rows_ = rows_;
+    result.collumns_ = collumns_;
     return result;
 }
 
-matrix_t matrix_t::operator *( matrix_t const & other ) const
+template<typename T>
+matrix_t<T> matrix_t<T>::operator *( matrix_t const & other ) const
 {
-    matrix_t result(stroki,other.stolbi);
-    for (int i = 0; i<stroki; i++) {
-        for (int j = 0; j<other.stolbi; j++) {
-            result.data[i][j] = 0;
-            for (int h = 0; h<stolbi; h++) {
-                result.data[i][j] += data[i][h]*other.data[h][j];
+    assert(collumns_ == other.rows());
+    matrix_t result;
+    result.elements_ = new T * [rows_];
+    for (std::size_t i = 0; i < rows_; i++)
+    {
+        result.elements_[i] = new T [collumns_];
+        for (std::size_t j = 0; j < collumns_; j++)
+        {
+            result.elements_[i][j] = 0;
+        }
+    }
+    for (std::size_t i = 0; i < rows_; i++)
+    {
+        for (std::size_t j = 0; j < other.collumns_; j++)
+        {
+            for (std::size_t z = 0; z < collumns_; z++)
+            {
+                result.elements_[i][j] += elements_[i][z] * other.elements_[z][j];
             }
         }
     }
+    /* умножение строку первой матрицы на столбец второй, чтобы получить столбец третьей*/
+    result.rows_ = rows_;
+    result.collumns_ = other.collumns_;
     return result;
 }
 
-matrix_t & matrix_t::operator -=( matrix_t const & other )
+template <typename T>
+matrix_t<T> & matrix_t<T>::operator -=( matrix_t const & other )
 {
-    stroki=other.stroki;
-    stolbi=other.stolbi;
-    for (int i = 0; i< stroki; i++) {
-        for (int j = 0 ; j< stolbi; j++) {
-            data[i][j]=data[i][j]-other.data [i][j];
-        }
-    }
+    *this = *this - other;
     return *this;
 }
 
-matrix_t & matrix_t::operator +=( matrix_t const & other )
+template <typename T>
+matrix_t<T> & matrix_t<T>::operator +=( matrix_t const & other )
 {
-    stroki=other.stroki;
-    stolbi=other.stolbi;
-    for (int i = 0; i< stroki; i++) {
-        for (int j = 0 ; j< stolbi; j++) {
-            data[i][j]=data[i][j]+other.data [i][j];
-        }
-    }
+    *this = *this + other;
     return *this;
 }
 
-matrix_t & matrix_t::operator *=( matrix_t const & other )
+template <typename T>
+matrix_t<T> & matrix_t<T>::operator *=( matrix_t const & other )
 {
-    matrix_t copy(*this);
-    matrix_t copy2(other);
-    for (int i = 0; i<stroki; i++) {
-        for (int j = 0; j<other.stolbi; j++) {
-            data[i][j] = 0;
-            for (int h = 0; h<stolbi; h++) {
-                data[i][j] += copy.data[i][h]*copy2.data[h][j];
-            }
-        }
-    }
-    this->stolbi = other.stolbi;
+    *this = *this * other;
     return *this;
 }
-istream & matrix_t::read( istream & stream )
-{
-    unsigned int stroki2 ;
-    unsigned int stolbi2 ;
-    char symbol ;
+
+template<typename T>
+std::istream & matrix_t<T>::read( std::istream & stream )
+{   std::size_t rows;
+    std::size_t collumns;
+    char symbol;
     
     bool success = true;
-    if( stream >> stroki2 && stream >> symbol && symbol == ',' && stream >> stolbi2 ) {
-        int ** elements = new int *[ stroki2 ];
-        for( unsigned int i = 0; success && i < stroki2; ++i ) {
-            elements[ i ] = new int [ stolbi2 ];
-            for( unsigned int j = 0; j < stolbi2; ++j ) {
+    if( stream >> rows && stream >> symbol && symbol == ',' && stream >> collumns ) {
+        T ** elements = new T *[ rows ];
+        for( std::size_t i = 0; success && i < rows; ++i ) {
+            elements[ i ] = new T[ collumns ];
+            for( std::size_t j = 0; j < collumns; ++j ) {
                 if( !( stream >> elements[ i ][ j ] ) ) {
                     success = false;
                     break;
@@ -166,17 +201,17 @@ istream & matrix_t::read( istream & stream )
         }
         
         if( success ) {
-            for( unsigned int i = 0; i < stroki; ++i ) {
-                delete [] data[ i ];
+            for( std::size_t i = 0; i < rows_; ++i ) {
+                delete [] elements_[ i ];
             }
-            delete [] data;
+            delete [] elements_;
             
-            stroki = stroki2;
-            stolbi = stolbi2;
-            data = elements;
+            rows_ = rows;
+            collumns_ = collumns;
+            elements_ = elements;
         }
         else {
-            for( unsigned int i = 0; i < stroki2 ; ++i ) {
+            for( std::size_t i = 0; i < rows; ++i ) {
                 delete [] elements[ i ];
             }
             delete [] elements;
@@ -187,27 +222,29 @@ istream & matrix_t::read( istream & stream )
     }
     
     if( !success ) {
-        stream.setstate( ios_base::failbit );
+        stream.setstate( std::ios_base::failbit );
     }
+    
     return stream;
 }
 
-ostream & matrix_t::write( ostream & stream ) const
+template <typename T>
+std::ostream & matrix_t<T>::write( std::ostream & stream ) const
 {
-    
-    stream << stroki << "," << stolbi;
-    for( unsigned int i = 0; i < stroki; ++i ) {
-        stream <<'\n';
-        for( unsigned int j = 0; j < stolbi; ++j ) {
-            stream << data[ i ][ j ];
-            if( j != stroki - 1 ) {
-                stream <<' ';
+    stream << rows_ << ", " << collumns_;
+    for( std::size_t i = 0; i < rows_; ++i ) {
+        stream << '\n';
+        for( std::size_t j = 0; j < collumns_; ++j ) {
+            stream << elements_[ i ][ j ];
+            if( j != rows_ - 1 ) {
+                stream << ' ';
             }
         }
     }
     
     return stream;
 }
+
 
 
 
